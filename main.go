@@ -16,8 +16,10 @@ func main() {
 	refreshToken()
 	accounts := getAccounts()
 	for _, a := range accounts {
-		getAccountBalances(a.Number)  // TODO: Write this to csv (with date and account details)
-		getAccountPositions(a.Number) // TODO: Write this to csv (with date and account details)
+		balances := getAccountBalances(a.Number)
+		var csvBRows model.CSVBalances
+		csvBRows.FromBalances(balances, a)
+		csvBRows.WriteToCsv(readEnvVariable("FILE_PATH_BALANCES"))
 	}
 }
 
@@ -26,7 +28,7 @@ func setup() {
 }
 
 func refreshToken() {
-	log.Print("refreshToken()")
+	// Manual refresh: https://apphub.questrade.com/UI/UserApps.aspx
 	url := "https://login.questrade.com/oauth2/token"
 	query := make(SSMap)
 	headers := make(SSMap)
@@ -51,7 +53,6 @@ func getAccounts() []model.Account {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Print(accountsResponse.TextOutput())
 	return accountsResponse.Accounts
 }
 
@@ -59,13 +60,11 @@ func getAccountBalances(accountNumber string) model.BalancesResponse {
 	url := readEnvVariable("QT_API_SERVER") + "v1/accounts/" + accountNumber + "/balances"
 	query := make(SSMap)
 	headers := make(SSMap)
-	log.Print(url)
 	balancesResponse := model.BalancesResponse{}
 	err := makeAuthRequest(url, query, headers, &balancesResponse)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Print(balancesResponse.TextOutput())
 	return balancesResponse
 }
 
@@ -73,13 +72,11 @@ func getAccountPositions(accountNumber string) []model.Position {
 	url := readEnvVariable("QT_API_SERVER") + "v1/accounts/" + accountNumber + "/positions"
 	query := make(SSMap)
 	headers := make(SSMap)
-	log.Print(url)
 	positionsResponse := model.PositionsResponse{}
 	err := makeAuthRequest(url, query, headers, &positionsResponse)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Print(positionsResponse.TextOutput())
 	return positionsResponse.Positions
 }
 
