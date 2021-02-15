@@ -20,6 +20,12 @@ func main() {
 		var csvBRows model.CSVBalances
 		csvBRows.FromBalances(balances, a)
 		csvBRows.WriteToCsv(readEnvVariable("FILE_PATH_BALANCES"))
+
+		positions := getAccountPositions(a.Number)
+		var csvPRows model.CSVPositions
+		csvPRows.FromPositions(positions, a)
+		csvPRows.WriteToCsv(readEnvVariable("FILE_PATH_POSITIONS"))
+
 	}
 }
 
