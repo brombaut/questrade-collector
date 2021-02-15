@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/brombaut/questrade-collector/model"
 	"github.com/spf13/viper"
@@ -30,7 +31,11 @@ func main() {
 }
 
 func setup() {
-	viper.SetConfigFile(".env")
+	if len(os.Args) < 2 {
+		log.Fatal("Missing path to .env file argument")
+	}
+	pathToEnvFile := os.Args[1]
+	viper.SetConfigFile(pathToEnvFile)
 }
 
 func refreshToken() {

@@ -116,8 +116,8 @@ func (csvP CSVPosition) ToSlice() []string {
 		fmt.Sprintf("%f", csvP.ClosedPnl),
 		fmt.Sprintf("%f", csvP.OpenPnl),
 		fmt.Sprintf("%f", csvP.TotalCost),
-		fmt.Sprintf("%T", csvP.IsRealTime),
-		fmt.Sprintf("%T", csvP.IsUnderReorg),
+		fmt.Sprintf("%t", csvP.IsRealTime),
+		fmt.Sprintf("%t", csvP.IsUnderReorg),
 	}
 	return result
 }

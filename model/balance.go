@@ -142,7 +142,7 @@ func (csvB CSVBalance) ToSlice() []string {
 		fmt.Sprintf("%f", csvB.TotalEquity),
 		fmt.Sprintf("%f", csvB.BuyingPower),
 		fmt.Sprintf("%f", csvB.MaintenanceExcess),
-		fmt.Sprintf("%T", csvB.IsRealTime),
+		fmt.Sprintf("%t", csvB.IsRealTime),
 	}
 	return result
 }
