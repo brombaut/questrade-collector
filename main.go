@@ -9,40 +9,27 @@ import (
 	"github.com/spf13/viper"
 )
 
+type SSMap map[string]string
+
 func main() {
 	setup()
 	refreshToken()
+	accounts := getAccounts()
+	for _, a := range accounts {
+		getAccountBalances(a.Number)  // TODO: Write this to csv (with date and account details)
+		getAccountPositions(a.Number) // TODO: Write this to csv (with date and account details)
+	}
 }
 
 func setup() {
 	viper.SetConfigFile(".env")
 }
 
-func readEnvVariable(key string) string {
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error while reading config file %s", err)
-	}
-	value, ok := viper.Get(key).(string)
-	if !ok {
-		log.Fatalf("Invalid type assertion")
-	}
-	return value
-}
-
-func setEnvVariable(key string, value string) {
-	viper.Set(key, value)
-	writeCurrEnvVariables()
-}
-
-func writeCurrEnvVariables() {
-	viper.WriteConfig()
-}
-
 func refreshToken() {
+	log.Print("refreshToken()")
 	url := "https://login.questrade.com/oauth2/token"
-	query := make(map[string]string)
-	headers := make(map[string]string)
+	query := make(SSMap)
+	headers := make(SSMap)
 	query["grant_type"] = "refresh_token"
 	query["refresh_token"] = readEnvVariable("QT_REFRESH_TOKEN")
 	oa2Resp := model.OAuth2Response{}
@@ -50,18 +37,58 @@ func refreshToken() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Print(oa2Resp)
 	setEnvVariable("QT_REFRESH_TOKEN", oa2Resp.RefreshToken)
 	setEnvVariable("QT_ACCESS_TOKEN", oa2Resp.AccessToken)
-	setEnvVariable("AT_API_SERVER", oa2Resp.ApiServer)
+	setEnvVariable("QT_API_SERVER", oa2Resp.ApiServer)
 }
 
-func makeAuthRequest() {
-	headers := make(map[string]string)
+func getAccounts() []model.Account {
+	url := readEnvVariable("QT_API_SERVER") + "v1/accounts"
+	query := make(SSMap)
+	headers := make(SSMap)
+	accountsResponse := model.AccountsResponse{}
+	err := makeAuthRequest(url, query, headers, &accountsResponse)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Print(accountsResponse.TextOutput())
+	return accountsResponse.Accounts
+}
+
+func getAccountBalances(accountNumber string) model.BalancesResponse {
+	url := readEnvVariable("QT_API_SERVER") + "v1/accounts/" + accountNumber + "/balances"
+	query := make(SSMap)
+	headers := make(SSMap)
+	log.Print(url)
+	balancesResponse := model.BalancesResponse{}
+	err := makeAuthRequest(url, query, headers, &balancesResponse)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Print(balancesResponse.TextOutput())
+	return balancesResponse
+}
+
+func getAccountPositions(accountNumber string) []model.Position {
+	url := readEnvVariable("QT_API_SERVER") + "v1/accounts/" + accountNumber + "/positions"
+	query := make(SSMap)
+	headers := make(SSMap)
+	log.Print(url)
+	positionsResponse := model.PositionsResponse{}
+	err := makeAuthRequest(url, query, headers, &positionsResponse)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Print(positionsResponse.TextOutput())
+	return positionsResponse.Positions
+}
+
+func makeAuthRequest(url string, query SSMap, headers SSMap, target interface{}) error {
 	headers["Authorization"] = "Bearer " + readEnvVariable("QT_ACCESS_TOKEN")
+	return makeUnauthRequest(url, query, headers, target)
 }
 
-func makeUnauthRequest(url string, query map[string]string, headers map[string]string, target interface{}) error {
+func makeUnauthRequest(url string, query SSMap, headers SSMap, target interface{}) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -81,4 +108,21 @@ func makeUnauthRequest(url string, query map[string]string, headers map[string]s
 	}
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(target)
+}
+
+func readEnvVariable(key string) string {
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalf("Error while reading config file %s", err)
+	}
+	value, ok := viper.Get(key).(string)
+	if !ok {
+		log.Fatalf("Invalid type assertion")
+	}
+	return value
+}
+
+func setEnvVariable(key string, value string) {
+	viper.Set(key, value)
+	viper.WriteConfig()
 }
