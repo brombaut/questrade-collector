@@ -45,9 +45,18 @@ func refreshToken() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	setEnvVariable("QT_REFRESH_TOKEN", oa2Resp.RefreshToken)
-	setEnvVariable("QT_ACCESS_TOKEN", oa2Resp.AccessToken)
-	setEnvVariable("QT_API_SERVER", oa2Resp.ApiServer)
+	err = setEnvVariable("QT_REFRESH_TOKEN", oa2Resp.RefreshToken)
+	if err != nil {
+		log.Fatal("Could not set QT_REFRESH_TOKEN")
+	}
+	err = setEnvVariable("QT_ACCESS_TOKEN", oa2Resp.AccessToken)
+	if err != nil {
+		log.Fatal("Could not set QT_ACCESS_TOKEN")
+	}
+	err = setEnvVariable("QT_API_SERVER", oa2Resp.ApiServer)
+	if err != nil {
+		log.Fatal("Could not set QT_API_SERVER")
+	}
 }
 
 func getAccounts() []model.Account {
@@ -125,7 +134,7 @@ func readEnvVariable(key string) string {
 	return value
 }
 
-func setEnvVariable(key string, value string) {
+func setEnvVariable(key string, value string) error {
 	viper.Set(key, value)
-	viper.WriteConfig()
+	return viper.WriteConfig()
 }
